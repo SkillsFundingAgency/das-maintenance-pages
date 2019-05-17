@@ -1,0 +1,94 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "resourceEnvironmentName": {
+            "type": "string"
+        },
+        "serviceName": {
+            "type": "string"
+        },
+        "cdnProfileName": {
+            "type": "string"
+        },
+        "cdnProfileResourceGroupName": {
+            "type": "string"
+        },
+        "customDomainName": {
+            "defaultValue": "",
+            "type": "string"
+        }
+    },
+    "variables": {
+        "deploymentUrlBase": "https://raw.githubusercontent.com/SkillsFundingAgency/das-platform-building-blocks/master/templates/",
+        "storageAccountName": "[toLower(concat('das', parameters('resourceEnvironmentName'), parameters('serviceName'), 'str'))]",
+        "resourceNamePrefix": "[toLower(concat('das-', parameters('resourceEnvironmentName'),'-', parameters('serviceName')))]",
+        "cdnEndpointName": "[concat(variables('resourceNamePrefix'), '-end')]",
+        "storageContainerName": "maintenancepages"
+    },
+    "resources": [
+        {
+            "apiVersion": "2017-05-10",
+            "name": "storage-account",
+            "type": "Microsoft.Resources/deployments",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('deploymentUrlBase'),'storage-account-arm.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "storageAccountName": {
+                        "value": "[variables('storageAccountName')]"
+                    },
+                    "accountType": {
+                        "value": "Standard_GRS"
+                    }
+                }
+            }
+        },
+        {
+            "apiVersion": "2017-05-10",
+            "name": "cdn-endpoint",
+            "type": "Microsoft.Resources/deployments",
+            "resourceGroup": "[parameters('cdnProfileResourceGroupName')]",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('deploymentUrlBase'),'cdn-endpoint.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "cdnProfileName": {
+                        "value": "[parameters('cdnProfileName')]"
+                    },
+                    "cdnEndPointName": {
+                        "value": "[variables('cdnEndpointName')]"
+                    },
+                    "originHostName": {
+                        "value": "[concat(variables('storageAccountName'), '.blob.core.windows.net')]"
+                    },
+                    "customDomainName": {
+                        "value": "[parameters('customDomainName')]"
+                    },
+                    "originPath": {
+                        "value": "[concat('/', variables('storageContainerName'))]"
+                    }
+                }
+            },
+            "dependsOn": [
+                "storage-account"
+            ]
+        }
+    ],
+    "outputs": {
+        "storageAccountName": {
+            "type": "string",
+            "value": "[variables('storageAccountName')]"
+        },
+        "storageContainerName": {
+            "type": "string",
+            "value": "[variables('storageContainerName')]"
+        }
+    }
+}
