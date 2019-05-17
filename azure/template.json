@@ -17,6 +17,10 @@
         "customDomainName": {
             "defaultValue": "",
             "type": "string"
+        },
+        "storageAccountType": {
+            "defaultValue": "Standard_LRS",
+            "type": "string"
         }
     },
     "variables": {
@@ -42,7 +46,7 @@
                         "value": "[variables('storageAccountName')]"
                     },
                     "accountType": {
-                        "value": "Standard_GRS"
+                        "value": "[parameters('storageAccountType')]"
                     }
                 }
             }
