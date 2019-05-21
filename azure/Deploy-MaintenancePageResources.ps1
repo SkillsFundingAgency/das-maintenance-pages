@@ -15,18 +15,13 @@ $StorageAccountName = "das$($ResourceEnvironmentName)$($ServiceName)str"
 $StorageAccount = Get-AzStorageAccount -ResourceGroupName $ResourceGroupName -Name $StorageAccountName -ErrorAction SilentlyContinue
 
 if (!$StorageAccount) {
+    Write-Host "-> Creating new storage account"
     $StorageAccount = New-AzStorageAccount -ResourceGroupName $ResourceGroupName -Name $StorageAccountName -SkuName $StorageAccountType -Kind "StorageV2" -Location $ResourceGroup.Location
 }
 
 $null = Set-AzCurrentStorageAccount -ResourceGroupName $ResourceGroupName -Name $StorageAccountName
+Enable-AzStorageStaticWebsite -IndexDocument "index.html" -ErrorDocument404Path "error.html"
 
-# Enable Static Hosting
-if (!$StorageAccount.PrimaryEndpoints.Web) {
-    Enable-AzStorageStaticWebsite -IndexDocument "index.html" -ErrorDocument404Path "error.html"
-}
-
-
-# Set up CDN Endpoint
 $CDNEndpointName = "das-$ResourceEnvironmentName-$ServiceName-end"
 
 $CDNProfileResourceGroup = Get-AzResourceGroup -Name $CDNProfileResourceGroupName -ErrorAction Stop
@@ -34,32 +29,28 @@ $CDNProfile = Get-AzCdnProfile -ProfileName $CDNProfileName -ResourceGroupName $
 
 $CDNEndpoint = Get-AzCdnEndpoint -EndpointName $CDNEndpointName -ProfileName $CDNProfile.Name -ResourceGroupName $CDNProfileResourceGroup.ResourceGroupName -ErrorAction SilentlyContinue
 
-$CDNEndpointConfig = @{
-    OriginName     = $StorageAccountName
-    OriginHostName = $StorageAccount.PrimaryEndpoints.Web
-}
-
 if (!$CDNEndpoint) {
+    Write-Host "-> Creating CDN Endpoint"
     $CDNEndpointConfig = @{
         EndpointName      = $CDNEndpointName
         ResourceGroupName = $CDNProfileResourceGroup.ResourceGroupName
         ProfileName       = $CDNProfile.Name
         Location          = $ResourceGroup.Location
         OriginName        = $StorageAccountName
-        OriginHostName    = $StorageAccount.PrimaryEndpoints.Web
+        OriginHostName    = ([Uri]$StorageAccount.PrimaryEndpoints.Web).Host
     }
-
     $CDNEndpoint = New-AzCdnEndpoint  @CDNEndpointConfig
 }
 
-# Upload Maintenance Pages
 $ProjectFolders = Get-ChildItem -Path "$PSScriptRoot/.." -Exclude azure -Directory
 
 foreach ($Folder in $ProjectFolders) {
+    Write-Host "-> Uploading $($Folder.Name) maintenance pages"
     $StaticPages = Get-ChildItem -Path $Folder.FullName -Include *.htm, *.html -Recurse    
 
     foreach ($Page in $StaticPages) {
+        Write-Host "    -> $($Page.Name)"
         $BlobName = "$($Folder.Name)/$($Page.Name)"
-        (Set-AzStorageBlobContent -File "$Page" -Container "`$web" -Blob $BlobName -Properties @{"ContentType" = "text/html" } -Force).Name
+        $null = Set-AzStorageBlobContent -File "$Page" -Container "`$web" -Blob $BlobName -Properties @{"ContentType" = "text/html" } -Force
     }
 }
