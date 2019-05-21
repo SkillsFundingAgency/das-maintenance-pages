@@ -4,7 +4,8 @@ param(
     [string]$ResourceGroupName,
     [string]$StorageAccountType = "Standard_LRS",
     [string]$CDNProfileName,
-    [string]$CDNProfileResourceGroupName
+    [string]$CDNProfileResourceGroupName,
+    [string]$CustomDomain = ""
 )
 
 $ResourceGroup = Get-AzResourceGroup -Name $ResourceGroupName
@@ -40,6 +41,18 @@ if (!$CDNEndpoint) {
         OriginHostName    = ([Uri]$StorageAccount.PrimaryEndpoints.Web).Host
     }
     $CDNEndpoint = New-AzCdnEndpoint  @CDNEndpointConfig
+}
+
+if ($CustomDomain) {
+    $ExistingCustomDomain = Get-AzCdnCustomDomain -EndpointName $CDNEndpoint.Name -ProfileName $CDNProfile.Name -ResourceGroupName $CDNProfileResourceGroup.ResourceGroupName
+    if (!$ExistingCustomDomain) {
+        $CustomDomainConfig = @{
+            CdnEndpoint      = $CDNEndpoint
+            CustomDomainName = $CustomDomain.Replace(".", "-")
+            HostName         = $CustomDomain
+        }
+        New-AzCdnCustomDomain @CustomDomainConfig | Enable-AzCdnCustomDomainHttps
+    }
 }
 
 $ProjectFolders = Get-ChildItem -Path "$PSScriptRoot/.." -Exclude azure -Directory
