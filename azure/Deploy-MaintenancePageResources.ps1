@@ -58,10 +58,10 @@ if ($CustomDomain) {
 $SrcRootPath = "$PSScriptRoot/../src"
 
 # --- Upload files to website root
-$ProjectRootFiles = Get-ChildItem -Path $SrcRootPath -Include *.htm, *.html, *.txt
+$ProjectRootFiles = Get-ChildItem -Path $SrcRootPath -File
 foreach ($File in $ProjectRootFiles) {
     Write-Host "-> Uploading $($File.Name) to website root"
-    $null = Set-AzStorageBlobContent -File "$File" -Container "`$web" -Blob $File.Name -Properties @{"ContentType" = "text/html" } -Force
+    #$null = Set-AzStorageBlobContent -File "$File" -Container "`$web" -Blob $File.Name -Properties @{"ContentType" = "text/html" } -Force
 }
 
 # --- Upload folders to correct path in container
