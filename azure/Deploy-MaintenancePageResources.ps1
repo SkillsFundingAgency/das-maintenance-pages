@@ -11,7 +11,6 @@ param(
 $ResourceGroup = Get-AzResourceGroup -Name $ResourceGroupName
 $StorageAccountName = "das$($ResourceEnvironmentName)$($ServiceName)str"
 
-
 # Set up Storage Account
 $StorageAccount = Get-AzStorageAccount -ResourceGroupName $ResourceGroupName -Name $StorageAccountName -ErrorAction SilentlyContinue
 
