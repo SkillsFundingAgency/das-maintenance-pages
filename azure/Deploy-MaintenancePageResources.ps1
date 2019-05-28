@@ -59,7 +59,7 @@ $SrcRootPath = "$PSScriptRoot/../src"
 # --- Upload files to website root
 $ProjectRootFiles = Get-ChildItem -Path $SrcRootPath -File
 foreach ($File in $ProjectRootFiles) {
-    Write-Host "-> Uploading $($File.Name) to website root"
+    Write-Host "-> Uploading $($File.FullName) to website root"
     $null = Set-AzStorageBlobContent -File "$File" -Container "`$web" -Blob $File.Name -Properties @{"ContentType" = "text/html" } -Force
 }
 
