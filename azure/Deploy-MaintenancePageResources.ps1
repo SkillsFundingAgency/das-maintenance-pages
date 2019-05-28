@@ -21,7 +21,7 @@ if (!$StorageAccount) {
 }
 
 $null = Set-AzCurrentStorageAccount -ResourceGroupName $ResourceGroupName -Name $StorageAccountName
-Enable-AzStorageStaticWebsite -IndexDocument "$PSScriptRoot/../src/index.htm" -ErrorDocument404Path "$PSScriptRoot/../src/error.htm"
+Enable-AzStorageStaticWebsite -IndexDocument "index.htm" -ErrorDocument404Path "error.htm"
 
 $CDNEndpointName = "das-$ResourceEnvironmentName-$ServiceName-end"
 
