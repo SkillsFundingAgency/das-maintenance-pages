@@ -68,7 +68,7 @@ foreach ($File in $ProjectRootFiles) {
 $ProjectFolders = Get-ChildItem -Path $SrcRootPath -Exclude azure -Directory
 foreach ($Folder in $ProjectFolders) {
     Write-Host "-> Uploading $($Folder.Name) maintenance pages"
-    $StaticPages = Get-ChildItem -Path $Folder.FullName -Include *.htm, *.html -Recurse
+    $StaticPages = Get-ChildItem -Path $Folder.FullName -Include *.htm, *.html, *.txt -Recurse
 
     foreach ($Page in $StaticPages) {
         Write-Host "    -> $($Page.Name)"
