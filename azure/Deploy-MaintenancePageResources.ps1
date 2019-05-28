@@ -1,4 +1,4 @@
-param(    
+param(
     [string]$ResourceEnvironmentName,
     [string]$ServiceName,
     [string]$ResourceGroupName,
@@ -11,7 +11,6 @@ param(
 $ResourceGroup = Get-AzResourceGroup -Name $ResourceGroupName
 $StorageAccountName = "das$($ResourceEnvironmentName)$($ServiceName)str"
 
-
 # Set up Storage Account
 $StorageAccount = Get-AzStorageAccount -ResourceGroupName $ResourceGroupName -Name $StorageAccountName -ErrorAction SilentlyContinue
 
@@ -21,7 +20,7 @@ if (!$StorageAccount) {
 }
 
 $null = Set-AzCurrentStorageAccount -ResourceGroupName $ResourceGroupName -Name $StorageAccountName
-Enable-AzStorageStaticWebsite -IndexDocument "index.html" -ErrorDocument404Path "error.html"
+Enable-AzStorageStaticWebsite -IndexDocument "index.htm" -ErrorDocument404Path "error.htm"
 
 $CDNEndpointName = "das-$ResourceEnvironmentName-$ServiceName-end"
 
@@ -55,11 +54,20 @@ if ($CustomDomain) {
     }
 }
 
-$ProjectFolders = Get-ChildItem -Path "$PSScriptRoot/.." -Exclude azure -Directory
+$SrcRootPath = "$PSScriptRoot/../src"
 
+# --- Upload files to website root
+$ProjectRootFiles = Get-ChildItem -Path $SrcRootPath -File
+foreach ($File in $ProjectRootFiles) {
+    Write-Host "-> Uploading $($File.FullName) to website root"
+    $null = Set-AzStorageBlobContent -File "$($File.FullName)" -Container "`$web" -Blob $File.Name -Properties @{"ContentType" = "text/html" } -Force
+}
+
+# --- Upload folders to correct path in container
+$ProjectFolders = Get-ChildItem -Path $SrcRootPath -Exclude azure -Directory
 foreach ($Folder in $ProjectFolders) {
     Write-Host "-> Uploading $($Folder.Name) maintenance pages"
-    $StaticPages = Get-ChildItem -Path $Folder.FullName -Include *.htm, *.html -Recurse    
+    $StaticPages = Get-ChildItem -Path $Folder.FullName -Include *.htm, *.html, *.txt -Recurse
 
     foreach ($Page in $StaticPages) {
         Write-Host "    -> $($Page.Name)"
