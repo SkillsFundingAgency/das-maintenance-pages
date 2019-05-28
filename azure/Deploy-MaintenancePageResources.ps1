@@ -1,4 +1,4 @@
-param(    
+param(
     [string]$ResourceEnvironmentName,
     [string]$ServiceName,
     [string]$ResourceGroupName,
@@ -21,7 +21,7 @@ if (!$StorageAccount) {
 }
 
 $null = Set-AzCurrentStorageAccount -ResourceGroupName $ResourceGroupName -Name $StorageAccountName
-Enable-AzStorageStaticWebsite -IndexDocument "index.html" -ErrorDocument404Path "error.html"
+Enable-AzStorageStaticWebsite -IndexDocument "$PSScriptRoot/../src/index.html" -ErrorDocument404Path "$PSScriptRoot/../src/error.html"
 
 $CDNEndpointName = "das-$ResourceEnvironmentName-$ServiceName-end"
 
@@ -55,11 +55,11 @@ if ($CustomDomain) {
     }
 }
 
-$ProjectFolders = Get-ChildItem -Path "$PSScriptRoot/.." -Exclude azure -Directory
+$ProjectFolders = Get-ChildItem -Path "$PSScriptRoot/../src" -Exclude azure -Directory
 
 foreach ($Folder in $ProjectFolders) {
     Write-Host "-> Uploading $($Folder.Name) maintenance pages"
-    $StaticPages = Get-ChildItem -Path $Folder.FullName -Include *.htm, *.html -Recurse    
+    $StaticPages = Get-ChildItem -Path $Folder.FullName -Include *.htm, *.html -Recurse
 
     foreach ($Page in $StaticPages) {
         Write-Host "    -> $($Page.Name)"
