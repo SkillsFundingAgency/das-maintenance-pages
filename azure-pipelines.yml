@@ -1,0 +1,34 @@
+name: "0.1.0-$(Rev:r)"
+
+trigger:
+  batch: true
+  branches:
+    include:
+      - "*"
+
+pr: none
+
+workspace:
+    clean: all
+
+variables:
+  buildConfiguration: 'release'
+  buildPlatform: 'anycpu'
+
+pool:
+  name: 'DAS - Continuous Deployment'
+
+steps:
+- task: CopyFiles@2
+  displayName: 'Copy Files to: $(build.artifactstagingdirectory)'
+  inputs:
+    Contents: |
+     azure/**
+     src/**
+    TargetFolder: '$(build.artifactstagingdirectory)/publish'
+    OverWrite: true
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact'
+  inputs:
+    PathtoPublish: '$(build.artifactstagingdirectory)/publish'
