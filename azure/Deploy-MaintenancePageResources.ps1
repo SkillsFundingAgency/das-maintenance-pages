@@ -55,8 +55,17 @@ if ($CustomDomain) {
     }
 }
 
-$ProjectFolders = Get-ChildItem -Path "$PSScriptRoot/../src" -Exclude azure -Directory
+$SrcRootPath = "$PSScriptRoot/../src"
 
+# --- Upload files to website root
+$ProjectRootFiles = Get-ChildItem -Path $SrcRootPath -Include *.htm, *.html. *.txt -File
+foreach ($File in $ProjectRootFiles) {
+    Write-Host "-> Uploading $($File.Name) to website root"
+    $null = Set-AzStorageBlobContent -File "$File" -Container "`$web" -Blob $File.Name -Properties @{"ContentType" = "text/html" } -Force
+}
+
+# --- Upload folders to correct path in container
+$ProjectFolders = Get-ChildItem -Path $SrcRootPath -Exclude azure -Directory
 foreach ($Folder in $ProjectFolders) {
     Write-Host "-> Uploading $($Folder.Name) maintenance pages"
     $StaticPages = Get-ChildItem -Path $Folder.FullName -Include *.htm, *.html -Recurse
