@@ -24,7 +24,7 @@ stages:
     jobs:
       - job: Build_and_Publish_Artifact
         pool:
-          name: 'DAS - Continuous Deployment'
+          name: 'DAS - Continuous Integration'
 
         workspace:
           clean: all
