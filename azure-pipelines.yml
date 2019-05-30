@@ -1,5 +1,3 @@
-name: "0.1.0-$(Rev:r)"
-
 trigger:
   batch: true
   branches:
@@ -8,23 +6,40 @@ trigger:
 
 pr: none
 
-workspace:
-    clean: all
+stages:
+  - stage: Version
+    jobs:
+      - job: GitVersion
+        pool:
+          name: HostedVS2017
 
-pool:
-  name: 'DAS - Continuous Deployment'
+        workspace:
+          clean: all
 
-steps:
-- task: CopyFiles@2
-  displayName: 'Copy Files to: $(build.artifactstagingdirectory)'
-  inputs:
-    Contents: |
-     azure/**
-     src/**
-    TargetFolder: '$(build.artifactstagingdirectory)/publish'
-    OverWrite: true
+        steps:
+          - task: GitVersion@4
+            displayName: GitVersion
 
-- task: PublishBuildArtifacts@1
-  displayName: 'Publish Artifact'
-  inputs:
-    PathtoPublish: '$(build.artifactstagingdirectory)/publish'
+  - stage: Build
+    jobs:
+      - job: Build_and_Publish_Artifact
+        pool:
+          name: 'DAS - Continuous Deployment'
+
+        workspace:
+          clean: all
+
+        steps:
+          - task: CopyFiles@2
+            displayName: 'Copy Files to: $(build.artifactstagingdirectory)'
+            inputs:
+              Contents: |
+                azure/**
+                src/**
+              TargetFolder: '$(build.artifactstagingdirectory)/publish'
+              OverWrite: true
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Artifact'
+            inputs:
+              PathtoPublish: '$(build.artifactstagingdirectory)/publish'
