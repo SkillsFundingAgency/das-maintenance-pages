@@ -7,19 +7,6 @@ trigger:
 pr: none
 
 stages:
-  - stage: Version
-    jobs:
-      - job: GitVersion
-        pool:
-          name: 'Hosted VS2017'
-
-        workspace:
-          clean: all
-
-        steps:
-          - task: GitVersion@4
-            displayName: GitVersion
-
   - stage: Build
     jobs:
       - job: Build_and_Publish_Artifact
@@ -30,6 +17,11 @@ stages:
           clean: all
 
         steps:
+          - task: gittools.gitversion-preview.gitversion-task.GitVersion@5
+            displayName: GitVersion
+            inputs:
+              configFilePath: GitVersion.yml
+
           - task: CopyFiles@2
             displayName: 'Copy Files to: $(build.artifactstagingdirectory)'
             inputs:
