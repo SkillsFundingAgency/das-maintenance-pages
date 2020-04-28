@@ -64,14 +64,39 @@ foreach ($File in $ProjectRootFiles) {
 }
 
 # --- Upload folders to correct path in container
-$ProjectFolders = Get-ChildItem -Path $SrcRootPath -Exclude azure -Directory
-foreach ($Folder in $ProjectFolders) {
-    Write-Host "-> Uploading $($Folder.Name) maintenance pages"
-    $StaticPages = Get-ChildItem -Path $Folder.FullName -Include *.htm, *.html, *.txt -Recurse
+if ($ResourceEnvironmentName -eq "Test") {
+    $ProjectFolders = Get-ChildItem -Path $SrcRootPath -Exclude azure,GatewayProd -Directory
+    foreach ($Folder in $ProjectFolders) {
+        Write-Host "-> Uploading $($Folder.Name) maintenance pages"
+        $StaticPages = Get-ChildItem -Path $Folder.FullName -Include *.htm, *.html, *.txt -Recurse
 
-    foreach ($Page in $StaticPages) {
-        Write-Host "    -> $($Page.Name)"
-        $BlobName = "$($Folder.Name)/$($Page.Name)"
-        $null = Set-AzStorageBlobContent -File "$Page" -Container "`$web" -Blob $BlobName -Properties @{"ContentType" = "text/html" } -Force
+        foreach ($Page in $StaticPages) {
+            Write-Host "    -> $($Page.Name)"
+            if ($Folder.Name -eq "GatewayTest" ) {
+                $BlobName = "Gateway/$($Page.Name)"
+            }
+            else { 
+                $BlobName = "$($Folder.Name)/$($Page.Name)"
+            }
+            $null = Set-AzStorageBlobContent -File "$Page" -Container "`$web" -Blob $BlobName -Properties @{"ContentType" = "text/html" } -Force
+        }
+    }
+}
+else {
+    $ProjectFolders = Get-ChildItem -Path $SrcRootPath -Exclude azure,GatewayTest -Directory
+    foreach ($Folder in $ProjectFolders) {
+        Write-Host "-> Uploading $($Folder.Name) maintenance pages"
+        $StaticPages = Get-ChildItem -Path $Folder.FullName -Include *.htm, *.html, *.txt -Recurse
+
+        foreach ($Page in $StaticPages) {
+            Write-Host "    -> $($Page.Name)"
+            if ($Folder.Name -eq "GatewayProd" ) {
+                $BlobName = "Gateway/$($Page.Name)"
+            }
+            else { 
+                $BlobName = "$($Folder.Name)/$($Page.Name)"
+            }
+            $null = Set-AzStorageBlobContent -File "$Page" -Container "`$web" -Blob $BlobName -Properties @{"ContentType" = "text/html" } -Force
+        }
     }
 }
