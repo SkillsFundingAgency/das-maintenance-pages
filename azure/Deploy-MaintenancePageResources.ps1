@@ -16,7 +16,7 @@ $StorageAccount = Get-AzStorageAccount -ResourceGroupName $ResourceGroupName -Na
 
 if (!$StorageAccount) {
     Write-Host "-> Creating new storage account"
-    $StorageAccount = New-AzStorageAccount -ResourceGroupName $ResourceGroupName -Name $StorageAccountName -SkuName $StorageAccountType -Kind "StorageV2" -Location $ResourceGroup.Location
+    $StorageAccount = New-AzStorageAccount -ResourceGroupName $ResourceGroupName -Name $StorageAccountName -SkuName $StorageAccountType -Kind "StorageV2" -Location $ResourceGroup.Location -AllowBlobPublicAccess $false
 }
 
 $null = Set-AzCurrentStorageAccount -ResourceGroupName $ResourceGroupName -Name $StorageAccountName
