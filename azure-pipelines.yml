@@ -11,37 +11,34 @@ resources:
   - repository: das-platform-building-blocks
     type: github
     name: SkillsFundingAgency/das-platform-building-blocks
-    ref: refs/heads/master
-    endpoint: "GitHub (SFA)"
+    ref: refs/tags/0.4.10
+    endpoint: SkillsFundingAgency
 
 stages:
-  - stage: Build
-    jobs:
-      - job: Build_and_Publish_Artifact
-        pool:
-          name: 'DAS - Continuous Integration'
+- stage: Build
+  jobs:
+  - job: Build_and_Publish_Artifact
+    pool:
+      name: DAS - Continuous Integration Agents
+      demands: LATEST_DOTNET_VERSION -equals 3.1
+    workspace:
+      clean: all
 
-        workspace:
-          clean: all
+    steps:
+    - template: azure-pipelines-templates/build/step/gitversion.yml@das-platform-building-blocks
 
-        steps:
-          - task: gittools.gitversion-preview.gitversion-task.GitVersion@5
-            displayName: GitVersion
-            inputs:
-              configFilePath: GitVersion.yml
+    - template: azure-pipelines-templates/build/step/dependency-check.yml@das-platform-building-blocks
 
-          - template: azure-pipelines-templates/build/step/dependency-check.yml@das-platform-building-blocks
+    - task: CopyFiles@2
+      displayName: 'Copy Files to: $(build.artifactstagingdirectory)'
+      inputs:
+        Contents: |
+          azure/**
+          src/**
+        TargetFolder: '$(build.artifactstagingdirectory)/publish'
+        OverWrite: true
 
-          - task: CopyFiles@2
-            displayName: 'Copy Files to: $(build.artifactstagingdirectory)'
-            inputs:
-              Contents: |
-                azure/**
-                src/**
-              TargetFolder: '$(build.artifactstagingdirectory)/publish'
-              OverWrite: true
-
-          - task: PublishBuildArtifacts@1
-            displayName: 'Publish Artifact'
-            inputs:
-              PathtoPublish: '$(build.artifactstagingdirectory)/publish'
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact'
+      inputs:
+        PathtoPublish: '$(build.artifactstagingdirectory)/publish'
