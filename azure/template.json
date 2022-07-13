@@ -23,6 +23,9 @@
         "cdnCustomHostName": {
             "type": "string"
         },
+        "storageAccountType": {
+            "type": "string"
+        },
         "utcValue": {
             "type": "string",
             "defaultValue": "[utcNow()]"
@@ -64,6 +67,9 @@
                     },
                     "storageKind": {
                         "value": "StorageV2"
+                    },
+                    "accountType": {
+                        "value": "[parameters('storageAccountType')]"
                     },
                     "allowSharedKeyAccess": {
                         "value": true
