@@ -1,57 +1,30 @@
 param(
     [string]$ResourceEnvironmentName,
-    [string]$ServiceName,
-    [string]$ResourceGroupName,
-    [string]$StorageAccountType = "Standard_LRS",
-    [string]$CDNProfileName,
-    [string]$CDNProfileResourceGroupName,
-    [string]$CustomDomain = ""
+    [string]$StorageAccountResourceGroup,
+    [string]$StorageAccountName,
+    [string]$SharedEnvResourceGroup,
+    [string]$SharedCdnProfileName,
+    [string]$CdnEndpointName
 )
 
-$ResourceGroup = Get-AzResourceGroup -Name $ResourceGroupName
-$StorageAccountName = "das$($ResourceEnvironmentName)$($ServiceName)str"
-
-# Set up Storage Account
-$StorageAccount = Get-AzStorageAccount -ResourceGroupName $ResourceGroupName -Name $StorageAccountName -ErrorAction SilentlyContinue
+# Get Storage Account
+$StorageAccount = Get-AzStorageAccount -ResourceGroupName $StorageAccountResourceGroup -Name $StorageAccountName -ErrorAction SilentlyContinue
 
 if (!$StorageAccount) {
-    Write-Host "-> Creating new storage account"
-    $StorageAccount = New-AzStorageAccount -ResourceGroupName $ResourceGroupName -Name $StorageAccountName -SkuName $StorageAccountType -Kind "StorageV2" -Location $ResourceGroup.Location -AllowBlobPublicAccess $false
+    throw "Storage Account $StorageAccountName in Resource Group $StorageAccountResourceGroup does not exist. Should be created from ARM template deployment."
 }
 
-$null = Set-AzCurrentStorageAccount -ResourceGroupName $ResourceGroupName -Name $StorageAccountName
+$null = Set-AzCurrentStorageAccount -ResourceGroupName $StorageAccountResourceGroup -Name $StorageAccountName
 Enable-AzStorageStaticWebsite -IndexDocument "index.htm" -ErrorDocument404Path "error.htm"
 
-$CDNEndpointName = "das-$ResourceEnvironmentName-$ServiceName-end"
 
-$CDNProfileResourceGroup = Get-AzResourceGroup -Name $CDNProfileResourceGroupName -ErrorAction Stop
-$CDNProfile = Get-AzCdnProfile -ProfileName $CDNProfileName -ResourceGroupName $CDNProfileResourceGroupName -ErrorAction Stop
+$CdnProfileResourceGroup = Get-AzResourceGroup -Name $SharedEnvResourceGroup -ErrorAction Stop
+$CdnProfile = Get-AzCdnProfile -ProfileName $SharedCdnProfileName -ResourceGroupName $SharedEnvResourceGroup -ErrorAction Stop
 
-$CDNEndpoint = Get-AzCdnEndpoint -EndpointName $CDNEndpointName -ProfileName $CDNProfile.Name -ResourceGroupName $CDNProfileResourceGroup.ResourceGroupName -ErrorAction SilentlyContinue
+$CdnEndpoint = Get-AzCdnEndpoint -EndpointName $CdnEndpointName -ProfileName $CdnProfile.Name -ResourceGroupName $CdnProfileResourceGroup.ResourceGroupName -ErrorAction SilentlyContinue
 
-if (!$CDNEndpoint) {
-    Write-Host "-> Creating CDN Endpoint"
-    $CDNEndpointConfig = @{
-        EndpointName      = $CDNEndpointName
-        ResourceGroupName = $CDNProfileResourceGroup.ResourceGroupName
-        ProfileName       = $CDNProfile.Name
-        Location          = $ResourceGroup.Location
-        OriginName        = $StorageAccountName
-        OriginHostName    = ([Uri]$StorageAccount.PrimaryEndpoints.Web).Host
-    }
-    $CDNEndpoint = New-AzCdnEndpoint  @CDNEndpointConfig
-}
-
-if ($CustomDomain) {
-    $ExistingCustomDomain = Get-AzCdnCustomDomain -EndpointName $CDNEndpoint.Name -ProfileName $CDNProfile.Name -ResourceGroupName $CDNProfileResourceGroup.ResourceGroupName
-    if (!$ExistingCustomDomain) {
-        $CustomDomainConfig = @{
-            CdnEndpoint      = $CDNEndpoint
-            CustomDomainName = $CustomDomain.Replace(".", "-")
-            HostName         = $CustomDomain
-        }
-        New-AzCdnCustomDomain @CustomDomainConfig | Enable-AzCdnCustomDomainHttps
-    }
+if (!$CdnEndpoint) {
+    throw "Cdn Endpoint $CdnEndpointName in Resource Group $($CdnProfileResourceGroup.ResourceGroupName) does not exist. Should be created from ARM template deployment."
 }
 
 $SrcRootPath = "$PSScriptRoot/../src"
