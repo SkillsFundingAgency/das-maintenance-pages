@@ -19,11 +19,34 @@ stages:
     pool:
       name: DAS - Continuous Integration Agents
       demands: LATEST_DOTNET_VERSION -equals 3.1
+    variables:
+    - group: BUILD Management Resources
     workspace:
       clean: all
 
     steps:
     - template: azure-pipelines-templates/build/step/gitversion.yml@das-platform-building-blocks
+
+    - task: SonarCloudPrepare@1
+      displayName: Prepare SonarCloud analysis configuration
+      condition: and(succeeded(), or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), eq(variables['Build.Reason'], 'PullRequest')))
+      inputs:
+        SonarCloud: ESFA - SonarCloud
+        organization: $(SonarCloudOrganisationKey)
+        scannerMode: CLI
+        configMode: manual
+        cliProjectName: "$(Build.DefinitionName)"
+        cliProjectKey: ${{ replace(variables['Build.Repository.Name'], '/', '_') }}
+
+    - task: SonarCloudAnalyze@1
+      displayName: Run SonarCloud analysis
+      condition: and(succeeded(), or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), eq(variables['Build.Reason'], 'PullRequest')))
+
+    - task: SonarCloudPublish@1
+      displayName: Publish SonarCloud analysis results on build summary
+      condition: and(succeeded(), or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), eq(variables['Build.Reason'], 'PullRequest')))
+      inputs:
+        pollingTimeoutSec: '300'
 
     - task: CopyFiles@2
       displayName: 'Copy Files to: $(build.artifactstagingdirectory)'
