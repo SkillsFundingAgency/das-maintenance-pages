@@ -2,9 +2,9 @@ param(
     [string]$ResourceEnvironmentName,
     [string]$StorageAccountResourceGroup,
     [string]$StorageAccountName,
-    [string]$SharedEnvResourceGroup,
-    [string]$SharedCdnProfileName,
-    [string]$CdnEndpointName
+    [string]$AfdProfileResourceGroup,
+    [string]$AfdProfileName,
+    [string]$AfdEndPointName
 )
 
 # Get Storage Account
@@ -18,13 +18,13 @@ $null = Set-AzCurrentStorageAccount -ResourceGroupName $StorageAccountResourceGr
 Enable-AzStorageStaticWebsite -IndexDocument "index.htm" -ErrorDocument404Path "error.htm"
 
 
-$CdnProfileResourceGroup = Get-AzResourceGroup -Name $SharedEnvResourceGroup -ErrorAction Stop
-$CdnProfile = Get-AzCdnProfile -ProfileName $SharedCdnProfileName -ResourceGroupName $SharedEnvResourceGroup -ErrorAction Stop
+$AfdProfileRg = Get-AzResourceGroup -Name $AfdProfileResourceGroup -ErrorAction Stop
+$AfdProfile = Get-AzFrontDoorCdnProfile -ProfileName $AfdProfileName -ResourceGroupName $AfdProfileResourceGroup -ErrorAction Stop
 
-$CdnEndpoint = Get-AzCdnEndpoint -EndpointName $CdnEndpointName -ProfileName $CdnProfile.Name -ResourceGroupName $CdnProfileResourceGroup.ResourceGroupName -ErrorAction SilentlyContinue
+$AfdEndpoint = Get-AzFrontDoorCdnEndpoint -EndpointName $AfdEndPointName -ProfileName $AfdProfile.Name -ResourceGroupName $AfdProfileRg.ResourceGroupName -ErrorAction SilentlyContinue
 
-if (!$CdnEndpoint) {
-    throw "Cdn Endpoint $CdnEndpointName in Resource Group $($CdnProfileResourceGroup.ResourceGroupName) does not exist. Should be created from ARM template deployment."
+if (!$AfdEndpoint) {
+    throw "AFD Endpoint $AfdEndPointName in Resource Group $($AfdProfileRg.ResourceGroupName) does not exist. Should be created from ARM template deployment."
 }
 
 $SrcRootPath = "$PSScriptRoot/../src"
