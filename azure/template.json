@@ -14,29 +14,74 @@
         "resourceGroupLocation": {
             "type": "string"
         },
-        "sharedEnvResourceGroup": {
-            "type": "string"
-        },
-        "sharedCdnProfileName": {
-            "type": "string"
-        },
-        "cdnCustomHostName": {
-            "type": "string"
-        },
         "storageAccountType": {
             "type": "string"
         },
-        "utcValue": {
+        "afdProfileResourceGroup": {
+            "type": "string"
+        },
+        "afdProfileName": {
+            "type": "string"
+        },
+        "afdEndPointName": {
+            "type": "string"
+        },
+        "originHostName": {
+            "type": "string",
+            "metadata": {
+                "description": "The hostname of the origin for the AFD endpoint"
+            }
+        },
+        "customDomainName": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "customDomainResourceName": {
+            "defaultValue": "",
+            "type": "string",
+            "metadata": {
+                "description": "The resource name for the custom domain in Azure"
+            }
+        },
+        "routeName": {
+            "type": "string",
+            "defaultValue": "default-route",
+            "metadata": {
+                "description": "The name of the AFD route"
+            }
+        },
+        "originGroupName": {
+            "type": "string",
+            "defaultValue": "default-origin-group",
+            "metadata": {
+                "description": "The name of the AFD origin group"
+            }
+        },
+        "originName": {
+            "type": "string",
+            "defaultValue": "default-origin",
+            "metadata": {
+                "description": "The name of the AFD origin"
+            }
+        },
+        "originPath": {
+            "type": "string",
+            "defaultValue": ""
+        },
+         "utcValue": {
             "type": "string",
             "defaultValue": "[utcNow()]"
+        },
+         "minimumTlsVersion": {
+            "type": "string",
+            "defaultValue": "TLS1_2"
         }
     },
     "variables": {
         "deploymentUrlBase": "https://raw.githubusercontent.com/SkillsFundingAgency/das-platform-building-blocks/master/templates/",
         "resourceNamePrefix": "[toLower(concat('das-', parameters('resourceEnvironmentName'),'-', parameters('serviceName')))]",
         "resourceGroupName": "[concat(variables('resourceNamePrefix'), '-rg')]",
-        "storageAccountName": "[concat('das', parameters('resourceEnvironmentName'), parameters('serviceName'), 'str')]",
-        "cdnEndpointName": "[concat(variables('resourceNamePrefix'), '-end')]"
+        "storageAccountName": "[concat('das', parameters('resourceEnvironmentName'), parameters('serviceName'), 'str')]"
     },
     "resources": [
         {
@@ -76,50 +121,58 @@
                     }
                 }
             }
+        },
+        {
+            "apiVersion": "2021-04-01",
+            "name": "[concat('afd-endpoint-', parameters('utcValue'))]",
+            "type": "Microsoft.Resources/deployments",
+            "resourceGroup": "[parameters('afdProfileResourceGroup')]",
+            "dependsOn": [
+                "[variables('resourceGroupName')]",
+                "[concat(variables('storageAccountName'), '-', parameters('utcValue'))]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('deploymentUrlBase'),'afd-endpoint.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "afdProfileName": {
+                        "value": "[parameters('afdProfileName')]"
+                    },
+                    "afdEndPointName": {
+                        "value": "[parameters('afdEndPointName')]"
+                    },
+                    "originHostName": {
+                        "value": "[parameters('originHostName')]"
+                    },
+                    "originPath": {
+                        "value": "[parameters('originPath')]"
+                    },
+                    "customDomainName": {
+                        "value": "[parameters('customDomainName')]"
+                    },
+                    "customDomainResourceName": {
+                        "value": "[parameters('customDomainResourceName')]"
+                    },
+                    "routeName": {
+                        "value": "[parameters('routeName')]"
+                    },
+                    "originGroupName": {
+                        "value": "[parameters('originGroupName')]"
+                    },
+                    "originName": {
+                        "value": "[parameters('originName')]"
+                    }
+                }
+            }
         }
-        // ,
-        // {
-        //     "apiVersion": "2021-04-01",
-        //     "name": "[concat(variables('cdnEndpointName'), '-', parameters('utcValue'))]",
-        //     "type": "Microsoft.Resources/deployments",
-        //     "resourceGroup": "[parameters('sharedEnvResourceGroup')]",
-        //     "dependsOn": [
-        //         "[variables('resourceGroupName')]"
-        //     ],
-        //     "properties": {
-        //         "mode": "Incremental",
-        //         "templateLink": {
-        //             "uri": "[concat(variables('deploymentUrlBase'),'cdn-endpoint.json')]",
-        //             "contentVersion": "1.0.0.0"
-        //         },
-        //         "parameters": {
-        //             "cdnProfileName": {
-        //                 "value": "[parameters('sharedCdnProfileName')]"
-        //             },
-        //             "cdnEndPointName": {
-        //                 "value": "[variables('cdnEndpointName')]"
-        //             },
-        //             "originHostName": {
-        //                 "value": "[replace(replace(replace(reference(concat(variables('storageAccountName'), '-', parameters('utcValue'))).outputs.storagePrimaryEndpointsWeb.value, 'https://', ''),'-', '.'), '/', '')]"
-        //             },
-        //             "customDomainName": {
-        //                 "value": "[parameters('cdnCustomHostName')]"
-        //             },
-        //             "isHttpAllowed": {
-        //                 "value": false
-        //             }
-        //         }
-        //     }
-        // }
     ],
     "outputs": {
         "StorageAccountName": {
             "type": "string",
             "value": "[variables('storageAccountName')]"
-        },
-        "CdnEndpointName": {
-            "type": "string",
-            "value": "[variables('cdnEndpointName')]"
         }
     }
 }
